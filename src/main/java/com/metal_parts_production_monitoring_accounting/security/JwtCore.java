@@ -1,29 +1,34 @@
 package com.metal_parts_production_monitoring_accounting.security;
 
-
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
 public class JwtCore {
 
-    @Value("${testing.app.secret}")
-    private String secret;
+    private final SecretKey secretKey;
+    private final long lifetime;
 
-    @Value("${testing.app.lifetime}")
-    private int lifetime;
+    public JwtCore(@Value("${testing.app.secret}") String secret,
+                   @Value("${testing.app.lifetime}") long lifetime) {
+        // Преобразуем строку в безопасный ключ
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
+        this.lifetime = lifetime;
+    }
 
     public String generateToken(Authentication authentication) {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        return Jwts.builder().setSubject(userDetails.getUsername())
+        return Jwts.builder()
+                .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime()+lifetime))
-                .signWith(SignatureAlgorithm.HS256, secret).compact();
+                .setExpiration(new Date(System.currentTimeMillis() + lifetime))
+                .signWith(secretKey)
+                .compact();
     }
-
 }

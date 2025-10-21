@@ -17,20 +17,24 @@ import com.metal_parts_production_monitoring_accounting.service.UserService;
 
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
+
 public class SecurityConfig {
+
 
     private final UserService userService;
     private final JwtAuthFilter jwtAuthFilter;
 
-
-    // 1. Кодировщик паролей
+    public SecurityConfig(UserService userService, JwtAuthFilter jwtAuthFilter) {
+        this.userService = userService;
+        this.jwtAuthFilter = jwtAuthFilter;
+    }
+    // Кодировщик паролей
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 2. Провайдер аутентификации — САМОЕ ВАЖНОЕ!
+    // Провайдер аутентификации ВАЖНОЕ!
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -39,14 +43,14 @@ public class SecurityConfig {
         return authProvider;
     }
 
-    // 3. Менеджер аутентификации
+    // Менеджер аутентификации
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    // 4. Настройка HTTP-безопасности
+    // Настройка HTTP безопасности
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
