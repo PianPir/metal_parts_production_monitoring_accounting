@@ -12,7 +12,6 @@ import java.util.Set;
 @Getter
 @Setter
 @NoArgsConstructor
-@RequiredArgsConstructor
 public class User {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
