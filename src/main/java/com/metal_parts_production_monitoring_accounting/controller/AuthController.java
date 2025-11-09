@@ -45,7 +45,7 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest signupRequest){
-        if(userRepository.findByUsername(signupRequest.getUsername()).isPresent()){
+        if(userRepository.findByUsername(signupRequest.username()).isPresent()){
             return ResponseEntity.badRequest().body("Username is already in use");
         }
 
@@ -53,8 +53,8 @@ public class AuthController {
                 orElseThrow(() -> new RuntimeException("Role not found"));
 
         User user = new User();
-        user.setUsername(signupRequest.getUsername());
-        user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
+        user.setUsername(signupRequest.username());
+        user.setPassword(passwordEncoder.encode(signupRequest.password()));
         user.setRoles(Set.of(userRole));
 
         userRepository.save(user);
@@ -66,8 +66,8 @@ public class AuthController {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
-                            request.getPassword()
+                            request.username(),
+                            request.password()
                     )
             );
 

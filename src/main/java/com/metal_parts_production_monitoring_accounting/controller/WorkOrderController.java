@@ -2,6 +2,7 @@ package com.metal_parts_production_monitoring_accounting.controller;
 
 
 
+import com.metal_parts_production_monitoring_accounting.payload.request.CompleteWorkOrderRequest;
 import com.metal_parts_production_monitoring_accounting.payload.request.WorkOrderRequest;
 import com.metal_parts_production_monitoring_accounting.payload.response.WorkOrderResponse;
 import com.metal_parts_production_monitoring_accounting.service.WorkOrderService;
@@ -13,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/work-orders")
@@ -46,8 +49,15 @@ public class WorkOrderController {
 
     // Завершение заказа
     @PutMapping("/{id}/complete")
-    public ResponseEntity<WorkOrderResponse> completeWorkOrder(@PathVariable Long id) {
-        WorkOrderResponse response = workOrderService.completeWorkOrder(id);
+    public ResponseEntity<WorkOrderResponse> completeWorkOrder(
+            @PathVariable Long id,
+            @RequestBody @Valid CompleteWorkOrderRequest request) {
+
+        WorkOrderResponse response = workOrderService.completeWorkOrder(
+                id,
+                request.partNumber(),
+                request.weightAfterProcessingKg(),
+                request.defectReason());
         return ResponseEntity.ok(response);
     }
 }

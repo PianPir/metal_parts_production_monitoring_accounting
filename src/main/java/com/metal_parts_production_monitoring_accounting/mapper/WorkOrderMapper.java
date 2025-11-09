@@ -15,5 +15,5 @@ public interface WorkOrderMapper {
     WorkOrderResponse toResponse(WorkOrder workOrder);
 
     // Для создания из запроса — будем использовать отдельный метод в сервисе,
-    // потому что нужно подгрузить связанные сущности.
+    // потому что нужно подгрузить связанные сущности
 }

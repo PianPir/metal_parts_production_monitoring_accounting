@@ -22,8 +22,8 @@ public class MachineController {
     @PostMapping
     public ResponseEntity<Machine> registerMachine(@Valid @RequestBody MachineRequest machineRequest) {
         Machine machine = new Machine();
-        machine.setName(machineRequest.getName());
-        machine.setMachineType(machineRequest.getType());
+        machine.setName(machineRequest.name());
+        machine.setMachineType(machineRequest.type());
         Machine savedMachine = machineRepository.save(machine);
         return ResponseEntity.ok().body(savedMachine);
     }
