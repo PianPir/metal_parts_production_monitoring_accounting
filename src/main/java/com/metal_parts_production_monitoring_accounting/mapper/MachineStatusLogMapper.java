@@ -9,7 +9,6 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public interface MachineStatusLogMapper {
 
-    @Mapping(source = "machine.name", target = "machineName")
     MachineMonitoringResponse toMachineStatusLogResponse(MachineStatusLog log);
 
 }

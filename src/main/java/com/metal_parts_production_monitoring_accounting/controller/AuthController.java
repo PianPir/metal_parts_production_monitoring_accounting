@@ -45,7 +45,7 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@Valid @RequestBody SignupRequest signupRequest){
-        if(userRepository.findByUsername(signupRequest.username()).isPresent()){
+        if(userRepository.findUserWithRolesByUsername(signupRequest.username()).isPresent()){
             return ResponseEntity.badRequest().body("Username is already in use");
         }
 

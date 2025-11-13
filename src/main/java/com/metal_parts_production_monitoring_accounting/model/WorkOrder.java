@@ -8,7 +8,7 @@ import lombok.NonNull;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "work_order")
+@Table(name = "work_orders")
 @Data
 public class WorkOrder {
 

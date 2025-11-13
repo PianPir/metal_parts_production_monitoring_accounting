@@ -11,7 +11,6 @@ public interface WorkOrderMapper {
 
     @Mapping(source = "materialBatch.alloyType", target = "alloyType")
     @Mapping(source = "machine.name", target = "machineName")
-    @Mapping(target = "status", expression = "java(workOrder.getStatus().name())")
     WorkOrderResponse toResponse(WorkOrder workOrder);
 
     // Для создания из запроса — будем использовать отдельный метод в сервисе,

@@ -5,10 +5,10 @@ import com.metal_parts_production_monitoring_accounting.model.MachineStatusLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.util.Optional;
 
 
 @Repository
 public interface MachineStatusLogRepository extends JpaRepository<MachineStatusLog, Long> {
-    List<MachineStatusLog> findByMachine_Id(Long machineId);
+    Optional<MachineStatusLog> findTopByMachineIdOrderByTimestampDesc(Long machineId);
 }

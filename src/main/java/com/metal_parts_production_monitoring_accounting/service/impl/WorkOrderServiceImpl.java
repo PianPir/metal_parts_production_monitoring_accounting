@@ -66,6 +66,7 @@ public class WorkOrderServiceImpl implements WorkOrderService {
         }
 
         workOrder.setStatus(WorkOrderStatus.RUNNING);
+        workOrder.setActualStart(LocalDateTime.now());
         WorkOrder savedWorkOrder = workOrderRepository.save(workOrder);
         return workOrderMapper.toResponse(savedWorkOrder);
     }

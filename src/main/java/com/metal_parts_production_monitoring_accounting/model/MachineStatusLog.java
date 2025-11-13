@@ -7,7 +7,7 @@ import lombok.Data;
 import java.time.Instant;
 
 @Entity
-@Table(name = "machine_status_log")
+@Table(name = "machine_status_logs")
 @Data
 public class MachineStatusLog {
 

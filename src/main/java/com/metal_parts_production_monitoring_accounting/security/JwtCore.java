@@ -1,7 +1,9 @@
 package com.metal_parts_production_monitoring_accounting.security;
 
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,6 +20,16 @@ public class JwtCore {
     private final SecretKey secretKey;
     private final long lifetime;
 
+    public JwtCore(SecretKey secretKey, long lifetime) {
+        this.secretKey = secretKey;
+        this.lifetime = lifetime;
+    }
+
+    public SecretKey getSecretKey() {
+        return secretKey;
+    }
+
+    @Autowired
     public JwtCore(@Value("${testing.app.secret}") String secret,
                    @Value("${testing.app.lifetime}") long lifetime) {
         // Преобразуем строку в безопасный ключ
@@ -38,7 +50,7 @@ public class JwtCore {
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + lifetime))
-                .signWith(secretKey)
+                .signWith(secretKey, SignatureAlgorithm.HS384)
                 .compact();
     }
 }
