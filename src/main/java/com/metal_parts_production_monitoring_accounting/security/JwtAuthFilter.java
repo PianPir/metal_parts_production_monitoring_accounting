@@ -34,7 +34,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private String secret;
 
     private final UserDetailsService userDetailsService;
-    private final JwtCore jwtCore; // Предполагается, что этот бин корректно настроен
+    private final JwtCore jwtCore;
 
     public JwtAuthFilter(UserDetailsService userDetailsService, JwtCore jwtCore) {
         this.userDetailsService = userDetailsService;
@@ -50,11 +50,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        log.info("Processing request: {}", request.getRequestURI());
-
         String header = request.getHeader("Authorization");
-        log.info("Authorization header: {}", header);
-
         String username = null;
         String token = null;
 
@@ -62,119 +58,72 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             token = header.substring(7);
             try {
                 Claims claims = Jwts.parserBuilder()
-                        .setSigningKey(jwtCore.getSecretKey()) // Используем ключ из JwtCore
+                        .setSigningKey(jwtCore.getSecretKey())
                         .build()
                         .parseClaimsJws(token)
                         .getBody();
-
                 username = claims.getSubject();
-                log.info("Username from token: {}", username);
             } catch (ExpiredJwtException e) {
-                log.warn("JWT Token is expired: {}", e.getMessage());
-            } catch (UnsupportedJwtException e) {
-                log.warn("JWT Token is unsupported: {}", e.getMessage());
-            } catch (MalformedJwtException e) {
-                log.warn("JWT Token is malformed: {}", e.getMessage());
-            } catch (SignatureException e) {
-                log.warn("JWT Token signature is invalid: {}", e.getMessage());
+                log.warn("JWT Token is expired for token: {}", token.substring(0, Math.min(20, token.length())) + "...");
+            } catch (UnsupportedJwtException | MalformedJwtException | SignatureException e) {
+                log.warn("Invalid JWT Token format or signature: {}", e.getMessage());
             } catch (IllegalArgumentException e) {
-                log.warn("JWT Token is null or empty: {}", e.getMessage());
+                log.warn("JWT Token is null or empty.");
             } catch (Exception e) {
-                log.warn("Could not parse JWT Token: {}", e.getMessage());
+                log.warn("Unexpected error parsing JWT Token: {}", e.getMessage());
             }
-        } else {
-            log.info("No Bearer token found in Authorization header.");
         }
 
-        // Проверяем, что username получен и аутентификация еще не установлена
+        // только если есть токен и нет аутентификации
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                log.info("Loading user details for username: {}", username);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                log.info("Loaded user details: {} with authorities: {}", userDetails.getUsername(), userDetails.getAuthorities());
 
-                // Проверяем валидность токена
                 if (isTokenValid(token, userDetails)) {
-                    log.info("Token is valid. Setting authentication in SecurityContext.");
-                    // Создаем токен аутентификации
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    // Добавляем детали запроса
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    // Устанавливаем аутентификацию в SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.info("Authentication set successfully. Principal: {}", authToken.getPrincipal());
+                    log.info("Successfully authenticated user: {}", username); // 👈 ОДИН ИНФО-ЛОГ — достаточно
                 } else {
-                    log.warn("Token is invalid for user: {}", username);
-                    // Не устанавливаем аутентификацию, оставляем как есть (анонимный пользователь)
+                    log.warn("JWT Token is invalid for user: {}", username);
                 }
             } catch (UsernameNotFoundException e) {
                 log.warn("User not found: {}", username);
-                // Пользователь не найден, не устанавливаем аутентификацию
-            }
-        } else {
-            if (username == null) {
-                log.info("No username found in token or no Authorization header.");
-            } else if (SecurityContextHolder.getContext().getAuthentication() != null) {
-                log.info("Authentication already exists in SecurityContext, skipping JWT filter logic.");
+            } catch (Exception e) {
+                log.warn("Unexpected error during JWT authentication for user: {}", username, e);
             }
         }
 
-        // Продолжаем выполнение цепочки фильтров
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Проверяет, совпадает ли username в токене с username UserDetails
-     * и не истек ли срок действия токена.
-     */
     private boolean isTokenValid(String token, UserDetails userDetails) {
-        if (token == null) {
-            log.debug("Token is null, cannot be valid.");
-            return false;
-        }
+        if (token == null) return false;
 
-        final String username;
         try {
-            username = Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey()) // Используем ключ из application.properties для проверки валидности
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(jwtCore.getSecretKey())
                     .build()
                     .parseClaimsJws(token)
-                    .getBody()
-                    .getSubject();
+                    .getBody();
+
+            String usernameFromToken = claims.getSubject();
+            boolean isUsernameValid = usernameFromToken != null && usernameFromToken.equals(userDetails.getUsername());
+            boolean isNotExpired = claims.getExpiration().after(new Date());
+
+            if (!isUsernameValid) {
+                log.debug("Token username mismatch: token={}, user={}", usernameFromToken, userDetails.getUsername());
+            }
+            if (!isNotExpired) {
+                log.debug("Token expired: exp={}, now={}", claims.getExpiration(), new Date());
+            }
+
+            return isUsernameValid && isNotExpired;
         } catch (Exception e) {
-            log.warn("Error parsing token during validation: {}", e.getMessage());
+            log.debug("Error validating JWT token: {}", e.getMessage());
             return false;
         }
-
-        boolean isUsernameValid = username.equals(userDetails.getUsername());
-        boolean isNotExpired = !isTokenExpired(token);
-
-        log.debug("Token username check: {} (token: {}, user: {})", isUsernameValid, username, userDetails.getUsername());
-        log.debug("Token expiration check: {}", isNotExpired);
-
-        return isUsernameValid && isNotExpired;
-    }
-
-    /**
-     * Проверяет, истек ли срок действия токена.
-     */
-    private boolean isTokenExpired(String token) {
-        Date expiration;
-        try {
-            expiration = Jwts.parserBuilder()
-                    .setSigningKey(getSigningKey())
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody()
-                    .getExpiration();
-        } catch (Exception e) {
-            log.warn("Error getting expiration date from token: {}", e.getMessage());
-            return true; // Считаем токен просроченным при ошибке
-        }
-
-        boolean isExpired = expiration.before(new Date());
-        log.debug("Token expiration check: {} (expiration: {}, current time: {})", isExpired, expiration, new Date());
-        return isExpired;
     }
 }

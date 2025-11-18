@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Service
@@ -92,7 +93,7 @@ public class WorkOrderServiceImpl implements WorkOrderService {
         processedPart.setPartNumber(partNumber);
         processedPart.setWeightAfterProcessingKg(weightAfterProcessingKg);
         processedPart.setDefectReason(defectReason);
-        processedPart.setCreatedAt(LocalDateTime.now());
+        processedPart.setCreatedAt(Instant.now());
         processedPart.setWorkOrder(workOrder);
 
         processedPartRepository.save(processedPart);
