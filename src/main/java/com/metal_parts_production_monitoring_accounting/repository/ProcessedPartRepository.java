@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ProcessedPartRepository extends JpaRepository<ProcessedPart, Long> {
     Optional<ProcessedPart> findByPartNumber(String processedPartId);
     // Получить все детали, произведённые на станке за период
-    @Query(" SELECT p FROM ProcessedPart p JOIN p.workOrder w WHERE w.machine.id = :machineID AND p.createdAt BETWEEN :from AND :to")
+    @Query(" SELECT p FROM ProcessedPart p JOIN p.workOrder w WHERE w.machine.id = :machineId AND p.createdAt BETWEEN :from AND :to")
     List<ProcessedPart> findByMachineIdAndCreatedAtBetween(
             @Param("machineId") Long machineId,
             @Param("from") Instant from,

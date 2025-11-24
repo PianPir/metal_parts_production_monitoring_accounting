@@ -85,7 +85,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.info("Successfully authenticated user: {}", username); // 👈 ОДИН ИНФО-ЛОГ — достаточно
+                    log.info("Successfully authenticated user: {}", username);
                 } else {
                     log.warn("JWT Token is invalid for user: {}", username);
                 }

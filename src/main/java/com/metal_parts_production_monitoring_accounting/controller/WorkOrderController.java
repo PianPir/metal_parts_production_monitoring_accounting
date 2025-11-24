@@ -1,7 +1,5 @@
 package com.metal_parts_production_monitoring_accounting.controller;
 
-
-
 import com.metal_parts_production_monitoring_accounting.payload.request.CompleteWorkOrderRequest;
 import com.metal_parts_production_monitoring_accounting.payload.request.WorkOrderRequest;
 import com.metal_parts_production_monitoring_accounting.payload.response.WorkOrderResponse;
@@ -9,7 +7,7 @@ import com.metal_parts_production_monitoring_accounting.service.WorkOrderService
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,11 +17,14 @@ import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/work-orders")
-@RequiredArgsConstructor
+// @RequiredArgsConstructor
 public class WorkOrderController {
 
     private final WorkOrderService workOrderService;
 
+    public WorkOrderController(WorkOrderService workOrderService) {
+        this.workOrderService = workOrderService;
+    }
     // Только ADMIN может создавать заказы
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -35,7 +36,11 @@ public class WorkOrderController {
 
     // просматривать список
     @GetMapping
-    public ResponseEntity<Page<WorkOrderResponse>> getAllWorkOrders(Pageable pageable) {
+    public ResponseEntity<Page<WorkOrderResponse>> getAllWorkOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        PageRequest pageable = PageRequest.of(page, size);
         Page<WorkOrderResponse> responses = workOrderService.getAllWorkOrders(pageable);
         return ResponseEntity.ok(responses);
     }
