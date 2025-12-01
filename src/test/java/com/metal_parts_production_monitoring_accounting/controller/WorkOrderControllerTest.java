@@ -2,8 +2,15 @@ package com.metal_parts_production_monitoring_accounting.controller;
 
 
 import com.metal_parts_production_monitoring_accounting.config.TestSecurityConfig;
+import com.metal_parts_production_monitoring_accounting.model.MachineType;
+import com.metal_parts_production_monitoring_accounting.repository.MachineRepository;
+import com.metal_parts_production_monitoring_accounting.repository.MaterialBatchRepository;
+import com.metal_parts_production_monitoring_accounting.repository.WorkOrderRepository;
 import com.metal_parts_production_monitoring_accounting.security.JwtTestUtil;
-import org.junit.Test;
+import com.metal_parts_production_monitoring_accounting.util.TestDataHelper;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +25,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -25,7 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @Testcontainers
 @SpringBootTest
-@Import(TestSecurityConfig.class)
+@Import({TestSecurityConfig.class,TestDataHelper.class})
 @AutoConfigureMockMvc
 public class WorkOrderControllerTest {
 
@@ -35,8 +43,12 @@ public class WorkOrderControllerTest {
             .withUsername("test")
             .withPassword("test");
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
+    @Autowired private TestDataHelper testDataHelper;
+
+    @Autowired private MachineRepository machineRepository;
+    @Autowired private MaterialBatchRepository materialBatchRepository;
+    @Autowired private WorkOrderRepository workOrderRepository;
 
     @Value("${testing.app.secret}")
     private String secret;
@@ -51,6 +63,20 @@ public class WorkOrderControllerTest {
         registry.add("spring.datasource.username", postgres::getUsername);
     }
 
+    @BeforeEach
+    void setUp() {
+        testDataHelper.createMachine("CNC-001", MachineType.MILLING);
+        testDataHelper.createMaterialBatch("Steel-45", new BigDecimal("100.00"), "Supplier A");
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Очистка после теста
+        workOrderRepository.deleteAll();
+        machineRepository.deleteAll();
+        materialBatchRepository.deleteAll();
+    }
+
     @Test
     public void shouldCreateWorkOrderWithAdminRole() throws Exception {
         String token = JwtTestUtil.generateToken("adminuser", List.of("ROLE_ADMIN"),secret,lifetime);
@@ -58,7 +84,7 @@ public class WorkOrderControllerTest {
         String requestBody = """
         {
             "materialBatchId": 1,
-            "machineId": 2,
+            "machineId": 1,
             "orderNumber": "ORDER-123",
             "plannedStart": "2025-12-01T10:00:00",
             "plannedEnd": "2025-12-01T12:00:00"
@@ -73,4 +99,13 @@ public class WorkOrderControllerTest {
                 .andExpect(jsonPath("$.orderNumber").value("ORDER-123"));
     }
 
+    @Test
+    public void shouldReturnAllWorkOrders() throws Exception {
+        String token = JwtTestUtil.generateToken("averageuser", List.of("ROLE_USER"),secret,lifetime);
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/work-orders")
+                .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray());
+    }
 }

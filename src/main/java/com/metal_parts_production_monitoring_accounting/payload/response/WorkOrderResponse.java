@@ -8,8 +8,6 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 public record WorkOrderResponse (
-
-
         @NotNull Long id,
         @NotBlank String orderNumber,
         @NotBlank String alloyType,

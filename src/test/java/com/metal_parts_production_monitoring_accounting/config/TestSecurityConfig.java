@@ -20,15 +20,18 @@ public class TestSecurityConfig {
     @Primary
     public UserDetailsService userDetailsService() {
         return username -> {
-                Set<Role> roles = username.contains("admin") ?
-                        Set.of(new Role(1L, ERole.ROLE_ADMIN)) :
-                        Set.of(new Role(2L, ERole.ROLE_USER));
+            Set<Role> roles;
+            if (username.contains("admin")) {
+                roles = Set.of(new Role(1L, ERole.ROLE_ADMIN));
+            } else {
+                roles = Set.of(new Role(2L, ERole.ROLE_USER));
+            }
 
-                return UserDetailsImpl.builder()
-                        .username("testuser")
-                        .password("ignored")
-                        .roles(roles)
-                        .build();
+            return UserDetailsImpl.builder()
+                    .username(username)
+                    .password("ignored")
+                    .roles(roles)
+                    .build();
         };
     }
 }
