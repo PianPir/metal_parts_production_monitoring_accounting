@@ -1,6 +1,7 @@
 package com.metal_parts_production_monitoring_accounting.service.impl;
 
 
+import com.metal_parts_production_monitoring_accounting.exception.*;
 import com.metal_parts_production_monitoring_accounting.mapper.WorkOrderMapper;
 import com.metal_parts_production_monitoring_accounting.model.*;
 import com.metal_parts_production_monitoring_accounting.payload.request.WorkOrderRequest;
@@ -35,14 +36,14 @@ public class WorkOrderServiceImpl implements WorkOrderService {
     @Transactional
     public WorkOrderResponse createWorkOrder(WorkOrderRequest request){
         if(request.plannedStart().isAfter(request.plannedEnd())){
-            throw new IllegalArgumentException("Planned start must be before planned end");
+            throw new InvalidWorkOrderRequestException("Planned start must be before planned end");
         }
 
         MaterialBatch Batch = materialBatchRepository.findById(request.materialBatchId()).orElseThrow(
-                () -> new IllegalArgumentException("Material batch not found"));
+                () -> new MaterialBatchNotFoundException("Material batch not found"));
 
         Machine machine = machineRepository.findById(request.machineId()).orElseThrow(
-                () -> new IllegalArgumentException("Machine not found"));
+                () -> new MachineNotFoundException("Machine not found"));
 
         WorkOrder workOrder = new WorkOrder();
         workOrder.setMaterialBatch(Batch);
@@ -60,10 +61,9 @@ public class WorkOrderServiceImpl implements WorkOrderService {
     @Transactional
     public WorkOrderResponse startWorkOrder(Long workOrderId){
         WorkOrder workOrder = workOrderRepository.findById(workOrderId).orElseThrow(
-                () -> new IllegalArgumentException("Work order not found"));
-
+                () -> new WorkOrderNotFoundException("Work order not found"));
         if (workOrder.getStatus() != WorkOrderStatus.PENDING) {
-            throw new IllegalStateException("WorkOrder must be PENDING to start");
+            throw new WorkOrderNotRunningException("WorkOrder must be PENDING to start");
         }
 
         workOrder.setStatus(WorkOrderStatus.RUNNING);
@@ -80,10 +80,10 @@ public class WorkOrderServiceImpl implements WorkOrderService {
                                                 String defectReason){
 
         WorkOrder workOrder = workOrderRepository.findById(workOrderId).orElseThrow(
-                () -> new IllegalArgumentException("Work order not found"));
+                () -> new WorkOrderNotFoundException("Work order not found"));
 
         if (workOrder.getStatus() != WorkOrderStatus.RUNNING) {
-            throw new IllegalStateException("WorkOrder must be RUNNING to complete");
+            throw new WorkOrderNotPendingException("WorkOrder must be RUNNING to complete");
         }
 
         workOrder.setActualEnd(LocalDateTime.now());
@@ -110,7 +110,7 @@ public class WorkOrderServiceImpl implements WorkOrderService {
     @Override
     public WorkOrderResponse getWorkOrderById (Long workOrderId){
         WorkOrder workOrder = workOrderRepository.findById(workOrderId).orElseThrow(
-                () -> new IllegalArgumentException("Work order not found"));
+                () -> new WorkOrderNotFoundException("Work order not found"));
         return workOrderMapper.toResponse(workOrder);
     }
 }

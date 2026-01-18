@@ -1,7 +1,6 @@
 package com.metal_parts_production_monitoring_accounting.mapper;
 
 import com.metal_parts_production_monitoring_accounting.model.WorkOrder;
-import com.metal_parts_production_monitoring_accounting.payload.request.WorkOrderRequest;
 import com.metal_parts_production_monitoring_accounting.payload.response.WorkOrderResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

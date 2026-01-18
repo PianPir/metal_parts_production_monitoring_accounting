@@ -41,7 +41,7 @@ public class MachineMonitoringServiceImpl implements MachineMonitoringService {
     @Override
     @Transactional(readOnly = false)
     public void receiveMachineMonitoring(Long machineId, MachineMonitoringRequest request) {
-        // вызов проходит через Spring-прокси → @Async сработает
+        // вызов проходит через Spring-прокси @Async сработает
         processMachineMonitoringInternal(machineId, request);
     }
 
